@@ -11,32 +11,59 @@
  * @since 2010-01-17
  */
 
-$md5 = @$argv[1];
-$filename = @$argv[2];
-$salt = @$argv[3];
-$startTime = microtime(true);
+require dirname(__FILE__).'/lib/Console.php';
 
-// parameter tests
-if (empty($filename)) {
-	die(sprintf("No dictionary file passed.\n"));
-} elseif (!file_exists($filename)) {
-	die(sprintf("Dictionary file: '%s' not found\n", $filename));
-}
-if (empty($md5) || strlen($md5) !== 32) {
-	die(sprintf("No md5 string passed\n"));
-}
-
-// main script
-$fp = fopen($filename, 'r');
-$i = 0;
-while(!feof($fp)) {
-	$line = trim(fgets($fp, 64));
-	if (md5($line.$salt) == $md5) {
-		sprintf("Password found: %s\n", $line);
-		break;
+class MD5DictCrackConsole extends Console
+{
+	protected $md5;
+	protected $filename;
+	protected $salt;
+	
+	public function init()
+	{
+		$this->md5 = @$this->args[1];
+		$this->filename = @$this->args[2];
+		$this->salt = @$this->args[3];
+		if (empty($this->filename)) {
+			$this->error('No Dictionary File passed!');
+			$this->quit();
+		} elseif (!file_exists($this->filename)) {
+			$this->error('File not found: '.$this->filename);
+			$this->quit();
+		} elseif (!is_readable($this->filename)) {
+			$this->error('Dictionary file is not readable to me: '.$this->filename);
+			$this->quit();
+		}
+		if (empty($this->md5) || strlen($this->md5) != 32) {
+			$this->error('MD5 not valid!');
+			$this->quit();
+		}
+		return true;
 	}
-	$i++;
+	
+	public function main()
+	{
+		$this->out('Try cracking md5 hash: '.$this->md5);
+		$fp = fopen($this->filename, 'r');
+		$i = 1;
+		while(!feof($fp)) {
+			$line = trim(fgets($fp, 256));
+			if ($i > 0 && $i % 10000 == 0) {
+				if ($i % 100000 == 0) {
+					$this->out(' '.$i.' tried');
+				} else {
+					$this->out('.', false);
+				}
+			}
+			if (md5($line.$this->salt) == $this->md5) {
+				$this->out('Password found: '.$line);
+				break;
+			}
+			$i++;
+		}
+		fclose($fp);
+		$this->out('done!');
+	}
 }
-fclose($fp);
 
-die (sprintf("%d strings tested, operation took %s seconds\n", $i, round(microtime(true) - $startTime), 2));
+$console = new MD5DictCrackConsole();
