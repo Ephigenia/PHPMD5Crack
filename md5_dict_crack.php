@@ -1,5 +1,7 @@
 <?php
 
+require dirname(__FILE__).'/lib/Console.php';
+
 /**
  * Try to crack an md5 string using a dictionary
  * 
@@ -10,9 +12,6 @@
  * @author Marcel Eichner // Ephigenia <love@ephigenia.de>
  * @since 2010-01-17
  */
-
-require dirname(__FILE__).'/lib/Console.php';
-
 class MD5DictCrackConsole extends Console
 {
 	protected $md5;
@@ -50,13 +49,13 @@ class MD5DictCrackConsole extends Console
 			$line = trim(fgets($fp, 256));
 			if ($i > 0 && $i % 10000 == 0) {
 				if ($i % 100000 == 0) {
-					$this->out(' '.$i.' tried');
+					$this->out(' '.$i.' phrases tried');
 				} else {
 					$this->out('.', false);
 				}
 			}
 			if (md5($line.$this->salt) == $this->md5) {
-				$this->out('Password found: '.$line);
+				$this->out("\nPassword found: ".$line);
 				break;
 			}
 			$i++;
